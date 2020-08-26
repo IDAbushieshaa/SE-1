@@ -5,6 +5,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class Book {
 	
@@ -13,7 +15,9 @@ public class Book {
 	private long id;
 	
 	private String title;
-	private String author;
+	
+	@JsonIgnore
+	private String titleAnalyzed;
 
 	
 	public long getId() {
@@ -22,6 +26,7 @@ public class Book {
 	public void setId(long id) {
 		this.id = id;
 	}
+	
 	public String getTitle() {
 		return title;
 	}
@@ -29,15 +34,37 @@ public class Book {
 		this.title = title;
 	}
 	
-	public String getAuthor() {
-		return author;
+	public String getTitleAnalyzed() {
+		return titleAnalyzed;
 	}
-	public void setAuthor(String author) {
-		this.author = author;
+	public void setTitleAnalyzed(String titleAnalyzed) {
+		this.titleAnalyzed = titleAnalyzed;
 	}
 	
 	@Override
 	public String toString() {
-		return "ID = \t" + id +  " & Title = \t" + title + "\t\t & Author = \t" + author;
+		return "ID = \t" + id +  " & Title = \t" + title;
+	}
+	
+	@Override
+	public int hashCode() {
+		Long hashCodeLong = this.id % Integer.MAX_VALUE;
+		int hashCodeInt = new Long(hashCodeLong).intValue();
+		return hashCodeInt;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof Book == false)
+			return false;
+		
+		Book book = (Book) obj;
+		if(this.id == 0 || book.getId() == 0)
+			return false;
+		
+		if(this.id != book.getId())
+			return false;
+		
+		return true;
 	}
 }

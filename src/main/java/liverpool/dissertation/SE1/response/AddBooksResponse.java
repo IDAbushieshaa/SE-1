@@ -6,7 +6,6 @@ public class AddBooksResponse {
 	private boolean success;
 	private String status;
 	
-	
 	public boolean isSuccess() {
 		return success;
 	}

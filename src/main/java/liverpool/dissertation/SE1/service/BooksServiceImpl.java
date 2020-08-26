@@ -1,19 +1,22 @@
 package liverpool.dissertation.SE1.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
+import org.apache.lucene.analysis.en.PorterStemFilter;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import liverpool.dissertation.SE1.document.BookDocument;
 import liverpool.dissertation.SE1.encryption.AES;
 import liverpool.dissertation.SE1.entity.Book;
 import liverpool.dissertation.SE1.repository.BooksDBRepository;
-import liverpool.dissertation.SE1.repository.BooksSolrRepository;
 
 @Service
 public class BooksServiceImpl implements BooksService{
@@ -21,9 +24,6 @@ public class BooksServiceImpl implements BooksService{
 	
 	@Autowired
 	private BooksDBRepository booksDBRepository;
-	
-	@Autowired
-	private BooksSolrRepository booksSolrRepository;
 	
 	@Value("${SE1.properties.encryptionKey}")
 	private String encryptionKey;
@@ -33,8 +33,9 @@ public class BooksServiceImpl implements BooksService{
 
 	@Override
 	public List<Book> insertBooks(List<Book> books) {
+
 		List<Book> insertedBooks = insertBooksInDBWithTitleEncrypted(books);
-		int numberIndexed = indexBooks(insertedBooks);
+
 		return insertedBooks;
 	}
 	
@@ -42,49 +43,65 @@ public class BooksServiceImpl implements BooksService{
 		for(Book book : books) {
 			Book encryptedBook = new Book();
 			encryptedBook.setTitle(AES.encrypt(book.getTitle(), encryptionKey, encryptionSalt));
+			String titleAnalyzed = this.analyzeBookTitle(book.getTitle());
+			encryptedBook.setTitleAnalyzed(titleAnalyzed);
 			Book insertedBook = booksDBRepository.save(encryptedBook);
 			book.setId(insertedBook.getId());
 		}
 		return books;
 	}
 	
-	private int indexBooks(List<Book> books) {
-		int numberIndexed = 0;
-		for(Book book : books) {
-			String[] keywordsToIndex = book.getTitle().split(" ");
-			StringBuilder encryptedTitle = new StringBuilder();
-			for(String keywordToIndex : keywordsToIndex) {
-				encryptedTitle.append(AES.encrypt(keywordToIndex.toLowerCase(), encryptionKey, encryptionSalt) + " ");
+
+	
+	private String analyzeBookTitle(String title) {
+		
+		StandardAnalyzer analyzer = new StandardAnalyzer();
+		TokenStream stream = analyzer.tokenStream(null, title);
+		stream = new EnglishMinimalStemFilter(stream);
+		stream = new PorterStemFilter(stream);
+		List<String> analyzedTitle = new ArrayList<>();
+		
+		try {
+			stream.reset();
+			while(stream.incrementToken()) {
+				analyzedTitle.add(stream.getAttribute(CharTermAttribute.class).toString());
 			}
-			BookDocument bookDocument = new BookDocument();	
-			bookDocument.setDatabaseId(AES.encrypt(new Long(book.getId()).toString(), encryptionKey, encryptionSalt));
-			bookDocument.setTitle(encryptedTitle.toString());
-			try {
-				BookDocument inserted = booksSolrRepository.save(bookDocument);
-				numberIndexed++;
-			} catch(Exception ex) {
-				ex.printStackTrace();
-			}
+		}catch(Exception ex) {
+			ex.printStackTrace();
 		}
-		return numberIndexed;
+		
+		String encryptedAnalyzedTitle = "";
+		for(String token : analyzedTitle) {
+			encryptedAnalyzedTitle += AES.encrypt(token, encryptionKey, encryptionSalt);
+			encryptedAnalyzedTitle += " ";
+		}
+
+		try {
+			analyzer.close();
+			stream.close();
+		}catch(Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		return encryptedAnalyzedTitle;
 	}
 	
 	@Override
-	public List<Book> findBooksByTitle(String title, int pageSize) {
-		Page<BookDocument> page = booksSolrRepository.findByTitle(AES.encrypt(title.toLowerCase(), encryptionKey, encryptionSalt), PageRequest.of(0, pageSize));
+	public Set<Book> findBooksByTitle(String title, int pageSize) {
+
+		String encryptedAnalyzedTitle = analyzeBookTitle(title);
 		
-		System.out.println("==================>>>>> " + page.getNumberOfElements());
+		String[] analyzedTitleComponents = encryptedAnalyzedTitle.split(" ");
 		
-		List<BookDocument> searchResult = page.getContent();
-		List<Long> ids = new ArrayList<Long>();
-		for(BookDocument document : searchResult) {
-			Long id = new Long(AES.decrypt(document.getDatabaseId(), encryptionKey, encryptionSalt));
-			ids.add(id);
+		Set<Book> booksFound = new HashSet<>();
+		for(String analyzedTitleComponet : analyzedTitleComponents) {
+			Set<Book> books = booksDBRepository.findByEncryptedAnalyzedTitle(analyzedTitleComponet.trim());
+			booksFound.addAll(books);
 		}
-		List<Book> books = booksDBRepository.findAllById(ids);
-		for(Book book : books) {
+		
+		for(Book book : booksFound) {
 			book.setTitle(AES.decrypt(book.getTitle(), encryptionKey, encryptionSalt));
 		}
-		return books;
+		return booksFound;
 	}
 }
