@@ -1,5 +1,7 @@
 package liverpool.dissertation.SE1.service;
 
+import java.io.FileInputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -10,6 +12,10 @@ import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.spell.SpellChecker;
+import org.apache.lucene.search.suggest.FileDictionary;
+import org.apache.lucene.store.MMapDirectory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -43,7 +49,7 @@ public class BooksServiceImpl implements BooksService{
 		for(Book book : books) {
 			Book encryptedBook = new Book();
 			encryptedBook.setTitle(AES.encrypt(book.getTitle(), encryptionKey, encryptionSalt));
-			String titleAnalyzed = this.analyzeBookTitle(book.getTitle());
+			String titleAnalyzed = this.analyzeText(book.getTitle());
 			encryptedBook.setTitleAnalyzed(titleAnalyzed);
 			Book insertedBook = booksDBRepository.save(encryptedBook);
 			book.setId(insertedBook.getId());
@@ -53,7 +59,7 @@ public class BooksServiceImpl implements BooksService{
 	
 
 	
-	private String analyzeBookTitle(String title) {
+	private String analyzeText(String title) {
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		TokenStream stream = analyzer.tokenStream(null, title);
@@ -89,7 +95,7 @@ public class BooksServiceImpl implements BooksService{
 	@Override
 	public Set<Book> findBooksByTitle(String title, int pageSize) {
 
-		String encryptedAnalyzedTitle = analyzeBookTitle(title);
+		String encryptedAnalyzedTitle = analyzeText(title);
 		
 		String[] analyzedTitleComponents = encryptedAnalyzedTitle.split(" ");
 		
@@ -103,5 +109,21 @@ public class BooksServiceImpl implements BooksService{
 			book.setTitle(AES.decrypt(book.getTitle(), encryptionKey, encryptionSalt));
 		}
 		return booksFound;
+	}
+	
+	
+	public static void main(String[] args) {
+		try {
+			  SpellChecker spellchecker = new SpellChecker(new MMapDirectory(Paths.get("./index")));
+			  spellchecker.clearIndex();
+			  spellchecker.indexDictionary(new FileDictionary(new FileInputStream("./WordsToIndex.txt")), new IndexWriterConfig(), true);
+			  String[] suggestions = spellchecker.suggestSimilar(" Daowod", 5, 0.1F);
+			  for(String string : suggestions) {
+				  System.out.println("==> " + string);
+			  }
+		}catch(Exception ex) {
+			ex.printStackTrace();
+		}
+
 	}
 }
