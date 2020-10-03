@@ -1,9 +1,20 @@
 package liverpool.dissertation.SE1.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+
+import org.hibernate.annotations.Immutable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -14,10 +25,18 @@ public class Book {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private long id;
 	
+	@Column(length=1000)
 	private String title;
 	
 	@JsonIgnore
-	private String titleAnalyzed;
+	@Column(length=300)
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(
+        name="ANALYZED_TITLE",
+        joinColumns = {@JoinColumn(name="book_id")},
+        inverseJoinColumns = {@JoinColumn(name="analyzed_word_id")}
+    )
+	private Set<AnalyzedWord> analyzedTitle;
 
 	
 	public long getId() {
@@ -34,11 +53,13 @@ public class Book {
 		this.title = title;
 	}
 	
-	public String getTitleAnalyzed() {
-		return titleAnalyzed;
+	public Set<AnalyzedWord> getAnalyzedTitle() {
+		if(analyzedTitle == null)
+			analyzedTitle = new HashSet<AnalyzedWord>();
+		return analyzedTitle;
 	}
-	public void setTitleAnalyzed(String titleAnalyzed) {
-		this.titleAnalyzed = titleAnalyzed;
+	public void setAnalyzedTitle(Set<AnalyzedWord> analyzedTitle) {
+		this.analyzedTitle = analyzedTitle;
 	}
 	
 	@Override

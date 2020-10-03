@@ -11,7 +11,8 @@ import liverpool.dissertation.SE1.entity.Book;
 
 @Repository
 public interface BooksDBRepository extends JpaRepository<Book, Long>{
-	
-	@Query("SELECT b FROM Book b where b.titleAnalyzed LIKE %:encryptedAnalyzedTitle%")
-	Set<Book> findByEncryptedAnalyzedTitle(String encryptedAnalyzedTitle);
+		
+	@Query("SELECT b FROM AnalyzedWord aw, Book b where aw.word = :word")
+	Set<Book> findBooksByAnalyzedWord(String word);
+
 }

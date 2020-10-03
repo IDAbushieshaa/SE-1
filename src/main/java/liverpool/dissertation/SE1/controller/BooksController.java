@@ -31,6 +31,7 @@ public class BooksController {
 	@ResponseStatus(value = HttpStatus.OK)
 	public AddBooksResponse addBooks(@RequestBody AddBooksCommand command) {
 		List<Book> books = command.getBooks();
+		System.out.println("Books Received = " + books);
 		List<Book> insertedBooks = booksService.insertBooks(books);
 		AddBooksResponse response = new AddBooksResponse();
 		return response;
@@ -43,7 +44,13 @@ public class BooksController {
 		
 		System.out.println("Received Request at " + new Date());
 		
+		Date date = new Date();
+		System.out.println(date.getTime());
 		Set<Book> result = booksService.findBooksByTitle(command.getSearchTerm(), 100);
+		Date date2 = new Date();
+		long difference = (date2.getTime() - date.getTime())/1000;
+		System.out.println(difference);
+		
 		FindBooksResponse response = new FindBooksResponse();
 		response.setBooks(result);
 		return response;
