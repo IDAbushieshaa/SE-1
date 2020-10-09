@@ -108,12 +108,13 @@ public class BooksServiceImpl implements BooksService{
 		List<String> wordsToFind = new ArrayList<String>();
 		Set<Book> booksFound = new HashSet<>();
 
+		String queryParam = "";
 		for(AnalyzedWord analyzedWord: analyzedWords) {
-			wordsToFind.add(analyzedWord.getWord());
+			queryParam = analyzedWord.getWord();
+			Set<Book> found = booksDBRepository.findBooksByAnalyzedWord(queryParam);
+//			Set<Book> found = analyzedWordsDBRepository.findBooksByWord(queryParam);
+			booksFound.addAll(found);
 		}
-		
-		Set<Book> found = analyzedWordsDBRepository.findBooksByWord(wordsToFind);
-		booksFound.addAll(found);
 		
 		for(Book book : booksFound) {
 			book.setTitle(AES.decrypt(book.getTitle(), encryptionKey, encryptionSalt));

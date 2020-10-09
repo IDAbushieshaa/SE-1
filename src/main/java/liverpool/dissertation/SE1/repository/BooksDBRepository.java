@@ -12,7 +12,9 @@ import liverpool.dissertation.SE1.entity.Book;
 @Repository
 public interface BooksDBRepository extends JpaRepository<Book, Long>{
 		
-	@Query("SELECT b FROM AnalyzedWord aw, Book b where aw.word = :word")
+	
+	
+	@Query("SELECT distinct b FROM Book b join b.analyzedTitle title where title.word = :word")
 	Set<Book> findBooksByAnalyzedWord(String word);
 
 }

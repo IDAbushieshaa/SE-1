@@ -21,7 +21,7 @@ import org.hibernate.annotations.Immutable;
 
 @Entity
 @Table(
-	indexes = {@Index(name = "analyzed_word_index",  columnList="word", unique = false)}
+	indexes = {@Index(name = "analyzed_word_index",  columnList="word", unique = true)}
 )
 public class AnalyzedWord {
 	

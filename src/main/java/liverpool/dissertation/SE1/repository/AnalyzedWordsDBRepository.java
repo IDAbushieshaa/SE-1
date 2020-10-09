@@ -13,8 +13,8 @@ import liverpool.dissertation.SE1.entity.Book;
 @Repository
 public interface AnalyzedWordsDBRepository extends JpaRepository<AnalyzedWord, Long>{
 
-	@Query("Select aw.books from AnalyzedWord aw where aw.word IN :wordsList")
-	Set<Book> findBooksByWord(List wordsList);
+	@Query("Select distinct aw.books from AnalyzedWord aw join aw.books where aw.word = :word")
+	Set<Book> findBooksByWord(String word);
 	
 	AnalyzedWord findByWord(String word);
 }
