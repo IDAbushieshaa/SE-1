@@ -7,7 +7,16 @@ import liverpool.dissertation.SE1.entity.Book;
 
 public class FindBooksResponse {
 	
+	private int countRetrieved;
 	
+	public int getCountRetrieved() {
+		return countRetrieved;
+	}
+
+	public void setCountRetrieved(int countRetrieved) {
+		this.countRetrieved = countRetrieved;
+	}
+
 	private Set<Book> books = new HashSet<>();
 
 	public Set<Book> getBooks() {

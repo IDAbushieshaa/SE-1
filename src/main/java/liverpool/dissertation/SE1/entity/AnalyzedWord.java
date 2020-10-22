@@ -32,7 +32,7 @@ public class AnalyzedWord {
 	@Column(length=300)
 	private String word;
 	
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy="analyzedTitle")
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy="analyzedTitle")
 	private Set<Book> books;
 
 	public long getId() {

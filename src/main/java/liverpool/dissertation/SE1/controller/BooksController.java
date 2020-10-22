@@ -23,42 +23,23 @@ import liverpool.dissertation.SE1.service.BooksService;
 @RequestMapping(path="/books")
 public class BooksController {
 	
-	
 	@Autowired
 	BooksService booksService;
 	
 	@PostMapping(path= "/addBooks", consumes = "application/json", produces = "application/json")
 	@ResponseStatus(value = HttpStatus.OK)
-	public AddBooksResponse addBooks(@RequestBody AddBooksCommand command) {
+	public void addBooks(@RequestBody AddBooksCommand command) {
 		List<Book> books = command.getBooks();
 		System.out.println("Books Received = " + books);
-		List<Book> insertedBooks = booksService.insertBooks(books);
-		AddBooksResponse response = new AddBooksResponse();
-		return response;
+		booksService.insertBooks(books);
 	}
-	
 	
 	@PostMapping(path = "/findBooksByTitle", consumes = "application/json", produces = "application/json")
 	@ResponseStatus(value = HttpStatus.OK)
 	public  FindBooksResponse findBooks(@RequestBody FindBooksCommand command) {
-		
-		System.out.println("Received Request at " + new Date());
-		
 		Date date = new Date();
 		System.out.println(date.getTime());
-		Set<Book> result = booksService.findBooksByTitle(command.getSearchTerm(), 100);
-		Date date2 = new Date();
-		long difference = (date2.getTime() - date.getTime())/1000;
-		System.out.println(difference);
-		
-		FindBooksResponse response = new FindBooksResponse();
-		response.setBooks(result);
+		FindBooksResponse response = booksService.findBooksByTitle(command.getSearchTerm(), 100);
 		return response;
 	}
-	
-	public static void main(String[] args) {
-		  
-
-	}
-
 }

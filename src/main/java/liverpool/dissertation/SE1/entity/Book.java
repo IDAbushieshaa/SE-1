@@ -30,7 +30,7 @@ public class Book {
 	
 	@JsonIgnore
 	@Column(length=300)
-	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(
         name="ANALYZED_TITLE",
         joinColumns = {@JoinColumn(name="book_id")},

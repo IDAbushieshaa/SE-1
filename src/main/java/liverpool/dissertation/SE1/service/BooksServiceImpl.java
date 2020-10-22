@@ -19,6 +19,7 @@ import liverpool.dissertation.SE1.entity.AnalyzedWord;
 import liverpool.dissertation.SE1.entity.Book;
 import liverpool.dissertation.SE1.repository.AnalyzedWordsDBRepository;
 import liverpool.dissertation.SE1.repository.BooksDBRepository;
+import liverpool.dissertation.SE1.response.FindBooksResponse;
 
 @Service
 public class BooksServiceImpl implements BooksService{
@@ -37,14 +38,13 @@ public class BooksServiceImpl implements BooksService{
 	private String encryptionSalt;
 
 	@Override
-	public List<Book> insertBooks(List<Book> books) {
+	public void insertBooks(List<Book> books) {
 		List<Book> insertedBooks = new ArrayList<Book>();
 		try {
 			insertedBooks = insertBooksInDBWithTitleEncrypted(books);
 		}catch(Exception ex) {
 			ex.printStackTrace();
 		}
-		return insertedBooks;
 	}
 	
 	private List<Book> insertBooksInDBWithTitleEncrypted(List<Book> books) throws Exception{
@@ -65,8 +65,9 @@ public class BooksServiceImpl implements BooksService{
 				}
 			}
 			booksToInsert.add(encryptedBook);
-			if(i%10 == 0 || booksToInsert.size() < 10) {
+			if(booksToInsert.size() == 10 || i == books.size()) {
 				System.out.println("Inserting the books: " + booksToInsert);
+				System.out.println("Will SAve Now");
 				booksDBRepository.saveAll(booksToInsert);
 				Thread.sleep(500);
 				booksToInsert = new ArrayList<Book>();
@@ -101,7 +102,7 @@ public class BooksServiceImpl implements BooksService{
 	}
 	
 	@Override
-	public Set<Book> findBooksByTitle(String title, int pageSize) {
+	public FindBooksResponse findBooksByTitle(String title, int pageSize) {
 
 		List<AnalyzedWord> analyzedWords = analyzeText(title);
 		
@@ -112,14 +113,16 @@ public class BooksServiceImpl implements BooksService{
 		for(AnalyzedWord analyzedWord: analyzedWords) {
 			queryParam = analyzedWord.getWord();
 			Set<Book> found = booksDBRepository.findBooksByAnalyzedWord(queryParam);
-//			Set<Book> found = analyzedWordsDBRepository.findBooksByWord(queryParam);
 			booksFound.addAll(found);
 		}
 		
 		for(Book book : booksFound) {
 			book.setTitle(AES.decrypt(book.getTitle(), encryptionKey, encryptionSalt));
 		}
-		return booksFound;
+		FindBooksResponse response = new FindBooksResponse();
+		response.setBooks(booksFound);
+		response.setCountRetrieved(booksFound.size());
+		return response;
 	}
 
 }
